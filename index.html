@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="六子棋 - 多場景對戰遊戲">
+    <title>六子棋 ⚔️ Connect Six</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-scene="inn">
+
+<!-- ================= 場景背景層 ================= -->
+<div id="scene-bg" class="scene-bg">
+    <!-- 場景裝飾元素將由 JS 動態注入 SVG -->
+    <div id="sceneOverlay" class="scene-overlay"></div>
+</div>
+
+<!-- ================= 主體容器 ================= -->
+<div id="app" class="app">
+
+    <!-- ================= 頂部標題列 ================= -->
+    <header class="topbar">
+        <div class="topbar__left">
+            <span class="topbar__logo">⚔️ 六子棋</span>
+            <span class="topbar__version">v2.0.0</span>
+            <span class="topbar__subtitle" id="sceneName">客棧</span>
+        </div>
+        <div class="topbar__center">
+            <div class="turn-indicator" id="turnIndicator">
+                <span class="turn-stone turn-stone--black" id="turnStone">●</span>
+                <span class="turn-label" id="turnLabel">黑棋回合</span>
+            </div>
+        </div>
+        <div class="topbar__right">
+            <div class="stones-info">
+                <span class="stone-count">第 <b id="moveCount">0</b> 手</span>
+                <span class="stone-to-place">待落子：<b id="stonesToPlace">1</b></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= 主要區域 ================= -->
+    <main class="main">
+
+        <!-- ───── 左側面板 ───── -->
+        <aside class="panel panel--left" id="leftPanel">
+
+            <!-- 遊戲模式 -->
+            <section class="card">
+                <h2 class="card__title">🎮 遊戲模式</h2>
+                <div class="radio-group">
+                    <label class="radio-item">
+                        <input type="radio" name="mode" value="ai" checked>
+                        <span class="radio-ui"></span>
+                        <span class="radio-label">🤖 對戰電腦</span>
+                    </label>
+                    <label class="radio-item">
+                        <input type="radio" name="mode" value="pvp">
+                        <span class="radio-ui"></span>
+                        <span class="radio-label">👥 雙人對戰</span>
+                    </label>
+                </div>
+            </section>
+
+            <!-- AI 設定 -->
+            <section class="card" id="aiSetting">
+                <h2 class="card__title">🤖 電腦棋力</h2>
+                <div class="select-group">
+                    <label class="select-item">
+                        <span class="select-label">玩家執</span>
+                        <select id="playerColor">
+                            <option value="black">⚫ 黑棋（先手）</option>
+                            <option value="white">⚪ 白棋（後手）</option>
+                        </select>
+                    </label>
+                    <label class="select-item">
+                        <span class="select-label">棋力段數</span>
+                        <select id="aiLevel">
+                            <option value="1">1 級 · 初學</option>
+                            <option value="2">2 級 · 入門</option>
+                            <option value="3">3 級 · 進階</option>
+                            <option value="4">4 段 · 中級</option>
+                            <option value="5">5 段 · 高級</option>
+                            <option value="6" selected>6 段 · 業餘強</option>
+                            <option value="7">7 段 · 準職業</option>
+                            <option value="8">8 段 · 職業級</option>
+                            <option value="9">9 段 · 國際大師</option>
+                        </select>
+                    </label>
+                    <label class="select-item">
+                        <span class="select-label">思考時間</span>
+                        <select id="thinkTime">
+                            <option value="1000">1 秒</option>
+                            <option value="3000" selected>3 秒</option>
+                            <option value="5000">5 秒</option>
+                            <option value="10000">10 秒</option>
+                            <option value="0">無上限</option>
+                        </select>
+                    </label>
+                </div>
+            </section>
+
+            <!-- 場景選擇 -->
+            <section class="card">
+                <h2 class="card__title">🎨 對戰場景</h2>
+                <div class="scene-grid">
+                    <button class="scene-btn scene-btn--inn active" data-scene="inn">
+                        <span class="scene-btn__icon">🏮</span>
+                        <span class="scene-btn__name">客棧</span>
+                    </button>
+                    <button class="scene-btn scene-btn--tea" data-scene="tea">
+                        <span class="scene-btn__icon">🧋</span>
+                        <span class="scene-btn__name">泡沫紅茶</span>
+                    </button>
+                    <button class="scene-btn scene-btn--temple" data-scene="temple">
+                        <span class="scene-btn__icon">🛕</span>
+                        <span class="scene-btn__name">廟口</span>
+                    </button>
+                    <button class="scene-btn scene-btn--park" data-scene="park">
+                        <span class="scene-btn__icon">🌳</span>
+                        <span class="scene-btn__name">公園裡</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- 操作按鈕 -->
+            <section class="card">
+                <h2 class="card__title">⚙️ 操作</h2>
+                <div class="btn-group">
+                    <button class="btn btn--primary" id="btnStart">▶️ 開始新局</button>
+                    <button class="btn btn--warn" id="btnUndo" disabled>⏪ 悔棋</button>
+                    <button class="btn btn--info" id="btnHint" disabled>💡 提示</button>
+                    <button class="btn btn--danger" id="btnResign" disabled>🏳️ 認輸</button>
+                </div>
+                <div class="toggle-group">
+                    <label class="toggle-item">
+                        <input type="checkbox" id="toggleSound">
+                        <span>🔊 音效</span>
+                    </label>
+                    <label class="toggle-item">
+                        <input type="checkbox" id="toggleCoord" checked>
+                        <span>📐 座標</span>
+                    </label>
+                    <label class="toggle-item">
+                        <input type="checkbox" id="toggleNumber" checked>
+                        <span>🔢 手數</span>
+                    </label>
+                </div>
+            </section>
+
+        </aside>
+
+        <!-- ───── 中央棋盤區 ───── -->
+        <section class="board-area">
+
+            <!-- 童磨對話列（AI 模式限定） -->
+            <div class="douma-bar" id="doumaBar" hidden>
+                <div class="douma-avatar">
+                    <span class="douma-eye douma-eye--l"></span>
+                    <span class="douma-eye douma-eye--r"></span>
+                    <span class="douma-smile"></span>
+                </div>
+                <div class="douma-bubble">
+                    <div class="douma-name">上弦之貳 ・ 童磨</div>
+                    <p class="douma-text" id="doumaText">…</p>
+                </div>
+            </div>
+
+            <div class="board-wrapper" id="boardWrapper">
+                <!-- SVG 棋盤由 JS 動態生成 -->
+                <svg id="boardSvg" class="board-svg" xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 760 760" preserveAspectRatio="xMidYMid meet">
+                </svg>
+                <!-- AI 思考遮罩 -->
+                <div class="ai-thinking" id="aiThinking">
+                    <div class="ai-thinking__spinner"></div>
+                    <p class="ai-thinking__text">AI 思考中…</p>
+                </div>
+                <!-- 勝利提示 -->
+                <div class="win-overlay" id="winOverlay" style="display:none;">
+                    <canvas id="fireworkCanvas"></canvas>
+                    <div class="win-card">
+                        <h2 id="winTitle">🎉 勝利！</h2>
+                        <p id="winDesc">黑棋連六獲勝！</p>
+                        <button class="btn btn--primary" id="btnNewGame">▶️ 再來一局</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 棋盤底部資訊列 -->
+            <div class="board-footer" id="boardFooter">
+                <div class="footer-item">
+                    <span class="footer-label">⏱️ 計時</span>
+                    <span class="footer-value" id="gameTimer">00:00</span>
+                </div>
+                <div class="footer-item">
+                    <span class="footer-label">⚫ 黑</span>
+                    <span class="footer-value" id="blackCount">0</span>
+                </div>
+                <div class="footer-item">
+                    <span class="footer-label">⚪ 白</span>
+                    <span class="footer-value" id="whiteCount">0</span>
+                </div>
+                <div class="footer-item">
+                    <span class="footer-label">📊 狀態</span>
+                    <span class="footer-value" id="gameStatus">等待開始</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ───── 右側面板 ───── -->
+        <aside class="panel panel--right" id="rightPanel">
+
+            <!-- 棋譜記錄 -->
+            <section class="card">
+                <h2 class="card__title">📜 棋譜記錄</h2>
+                <div class="move-list" id="moveList">
+                    <p class="empty-hint">尚未開始對局</p>
+                </div>
+                <button class="btn btn--info btn--sm" id="btnExport">📋 匯出棋譜</button>
+            </section>
+
+            <!-- 規則說明 -->
+            <section class="card">
+                <h2 class="card__title">📖 規則</h2>
+                <div class="rules-text">
+                    <p>1 ️⃣ 黑棋先手，僅下 <b>1 子</b></p>
+                    <p>2 ️⃣ 其後每回合各下 <b>2 子</b></p>
+                    <p>3 ️⃣ 先連成 <b>六子</b> 勝</p>
+                    <p>4 ️⃣ 七連以上則為 <b>和局</b></p>
+                </div>
+            </section>
+
+        </aside>
+
+    </main>
+
+    <!-- ================= 行動版底部抽屜 ================= -->
+    <div class="mobile-tabbar" id="mobileTabbar">
+        <button class="tab-btn active" data-tab="board">♟️ 棋盤</button>
+        <button class="tab-btn" data-tab="left">🎮 設定</button>
+        <button class="tab-btn" data-tab="right">📜 棋譜</button>
+    </div>
+
+    <!-- ================= Toast 提示 ================= -->
+    <div class="toast" id="toast"></div>
+
+</div>
+
+<script src="ai-worker.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
